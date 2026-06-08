@@ -10,8 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # استخدام أحدث نسخة تدعم Node 24 بشكل كامل
     - name: Checkout Repository
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v4.2.5
 
     - name: Install ARM Compiler and UPX
       run: |
@@ -110,8 +111,9 @@ jobs:
       run: |
         tar -cf Wolf-Max.ngz data
 
+    # التحديث لأحدث نسخة من أداة الرفع المتوافقة مع Node 24
     - name: Upload Finished Plugin
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v4.3.3
       with:
         name: Wolf-Max-Plugin-Package
         path: Wolf-Max.ngz
