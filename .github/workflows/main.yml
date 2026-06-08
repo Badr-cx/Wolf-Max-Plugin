@@ -1,4 +1,4 @@
-name: Build Wolf Max Plugin (Final Clean)
+name: Build Wolf Gold Max Plugin
 
 on:
   push:
@@ -8,6 +8,9 @@ on:
 jobs:
   build-plugin:
     runs-on: ubuntu-latest
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
     - name: Checkout Repository
@@ -49,12 +52,13 @@ jobs:
         arm-linux-gnueabihf-gcc -static WOLFSERVERMAX.c -o WOLFSERVERMAX
         upx --brute WOLFSERVERMAX
 
-    - name: Create Fortis/Icone Directory Structure
+    - name: Create Exact WOLFGOLD Directory Structure
       run: |
-        mkdir -p data/plugin/wolf_cam
+        # إنشاء نفس المجلد الرئيسي والمجلدات الفرعية المطابقة لـ WOLFGOLD
+        mkdir -p WOLFGOLD/data/plugin/wolf_cam
         
-        # ملف الوصف الكوري الأساسي
-        cat << 'EOF' > data/plugin/Wolf-Max.descr
+        # كتابة ملف الوصف الكوري بنفس الفصالة والمسارات المطلوبة
+        cat << 'EOF' > WOLFGOLD/data/plugin/Wolf-Max.descr
         # Wolf_Max_Plugin
         WOLF SERVER MAX |MA|( v1.0.0 )
         [NEW_API_V1]
@@ -67,8 +71,8 @@ jobs:
         /data/plugin/Wolf-Max.descr
         EOF
 
-        # ملفات إعدادات الـ Ncam
-        cat << 'EOF' > data/plugin/wolf_cam/ncam.conf
+        # كتابة ملفات إعدادات الـ Ncam
+        cat << 'EOF' > WOLFGOLD/data/plugin/wolf_cam/ncam.conf
         [global]
         active_readers = 1
         disablelog = 1
@@ -83,7 +87,7 @@ jobs:
         boxtype = pc
         EOF
 
-        cat << 'EOF' > data/plugin/wolf_cam/ncam.user
+        cat << 'EOF' > WOLFGOLD/data/plugin/wolf_cam/ncam.user
         [account]
         user = icone
         pwd = icone
@@ -91,18 +95,25 @@ jobs:
         au = 1
         EOF
 
-        echo "# TARGET FILE" > data/plugin/wolf_cam/ncam.server
+        echo "# TARGET FILE" > WOLFGOLD/data/plugin/wolf_cam/ncam.server
 
-        # نقل المحرك الأساسي
-        mv WOLFSERVERMAX data/plugin/wolf_cam/
-        chmod 755 data/plugin/wolf_cam/WOLFSERVERMAX
+        # نقل المحرك المجمع للمسار الداخلي الجديد
+        mv WOLFSERVERMAX WOLFGOLD/data/plugin/wolf_cam/
+        chmod 755 WOLFGOLD/data/plugin/wolf_cam/WOLFSERVERMAX
 
-    - name: Package Plugin into NGZ
+        # إذا قمت برفع ملف ncam الأصلي للريبو، سيتم نقله تلقائياً للمكان المناسب وتعديل صلاحياته
+        if [ -f "ncam" ]; then
+          mv ncam WOLFGOLD/data/plugin/wolf_cam/
+          chmod 755 WOLFGOLD/data/plugin/wolf_cam/ncam
+        fi
+
+    - name: Package Plugin into NGZ (WOLFGOLD Structure)
       run: |
-        tar -cf Wolf-Max.ngz data
+        # ضغط مجلد WOLFGOLD بالكامل للحفاظ على الهيكل الداخلي الأصلي
+        tar -cf Wolf-Max.ngz WOLFGOLD
 
     - name: Upload Finished Plugin
       uses: actions/upload-artifact@v4
       with:
-        name: Wolf-Max-Plugin-Package
+        name: Wolf-Gold-Max-Package
         path: Wolf-Max.ngz
