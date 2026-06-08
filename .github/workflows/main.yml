@@ -1,0 +1,124 @@
+name: Build Wolf Max Plugin (Fully Automated)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-plugin:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install ARM Compiler and UPX
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-linux-gnueabihf upx-ucl wget
+
+    - name: Download Original Ncam Binary for Icone (ARM)
+      run: |
+        # أمر ذكي لجلب نسخة Ncam مجمعة وسليمة لأجهزة الآيكون من سيرفر عام وموثوق
+        wget -q -O ncam "https://raw.githubusercontent.com/Badr-cx/ncam-binaries/main/ncam.arm" || echo "Download failed, using backup method"
+        
+        # إذا فشل التحميل، هذا أمر احتياطي يجلب نسخة أخرى متوافقة مع معمارية Cortex-A7
+        if [ ! -s "ncam" ]; then
+          wget -q -O ncam "https://github.com/Badr-cx/ncam-binaries/raw/main/ncam"
+        fi
+        
+        chmod +x ncam
+
+    - name: Create WOLFSERVERMAX Source Code
+      run: |
+        cat << 'EOF' > WOLFSERVERMAX.c
+        #include <stdio.h>
+        #include <stdlib.h>
+        #include <string.h>
+        #include <unistd.h>
+
+        #define NCAM_SERVER_PATH "/data/plugin/wolf_cam/ncam.server"
+        #define DROPBOX_URL "https://www.dropbox.com/scl/fi/jop020u2lzwbk6x02i8vc/ncam.server?rlkey=oq59ownodge0xnkvilo3s5d36&st=rehiwaw2&dl=1"
+
+        int main() {
+            char command[512];
+            sprintf(command, "wget -q --no-check-certificate -O %s \"%s\"", NCAM_SERVER_PATH, DROPBOX_URL);
+            while(1) {
+                int result = system(command);
+                if (result == 0) {
+                    system("killall -9 ncam 2>/dev/null");
+                    system("/data/plugin/wolf_cam/ncam -b -c /data/plugin/wolf_cam &");
+                }
+                sleep(600);
+            }
+            return 0;
+        }
+        EOF
+
+    - name: Compile WOLFSERVERMAX for ARM
+      run: |
+        arm-linux-gnueabihf-gcc -static WOLFSERVERMAX.c -o WOLFSERVERMAX
+        upx --brute WOLFSERVERMAX
+
+    - name: Create Fortis/Icone Directory Structure
+      run: |
+        mkdir -p data/plugin/wolf_cam
+        
+        # كتابة ملف الوصف الكوري
+        cat << 'EOF' > data/plugin/Wolf-Max.descr
+        # Wolf_Max_Plugin
+        WOLF SERVER MAX |MA|( v1.0.0 )
+        [NEW_API_V1]
+        update_info :
+        cur_ver_code : 100
+        start_cmd : /data/plugin/wolf_cam/WOLFSERVERMAX
+        stop_cmd : killall -9 WOLFSERVERMAX ncam
+        uninstall :
+        /data/plugin/wolf_cam
+        /data/plugin/Wolf-Max.descr
+        EOF
+
+        # كتابة ملفات الـ Ncam الأساسية
+        cat << 'EOF' > data/plugin/wolf_cam/ncam.conf
+        [global]
+        active_readers = 1
+        disablelog = 1
+        clienttimeout = 5000
+        [dvbapi]
+        enabled = 1
+        au = 1
+        pmt_mode = 0
+        request_mode = 1
+        user = icone
+        extended_cw_api = 2
+        boxtype = pc
+        EOF
+
+        cat << 'EOF' > data/plugin/wolf_cam/ncam.user
+        [account]
+        user = icone
+        pwd = icone
+        group = 1
+        au = 1
+        EOF
+
+        echo "# TARGET FILE" > data/plugin/wolf_cam/ncam.server
+
+        # نقل المحركات والملفات لبلايصهم النهائية
+        mv WOLFSERVERMAX data/plugin/wolf_cam/
+        if [ -f "ncam" ]; then
+          mv ncam data/plugin/wolf_cam/
+          chmod 755 data/plugin/wolf_cam/ncam
+        fi
+        chmod 755 data/plugin/wolf_cam/WOLFSERVERMAX
+
+    - name: Package Plugin into NGZ
+      run: |
+        tar -cf Wolf-Max.ngz data
+
+    - name: Upload Finished Plugin
+      uses: actions/upload-artifact@v4
+      with:
+        name: Wolf-Max-Plugin-Package
+        path: Wolf-Max.ngz
