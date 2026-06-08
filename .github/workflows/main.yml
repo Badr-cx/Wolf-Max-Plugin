@@ -1,4 +1,4 @@
-name: Build Wolf Max Plugin (Fully Automated)
+name: Build Wolf Max Plugin (Final Clean)
 
 on:
   push:
@@ -9,31 +9,15 @@ jobs:
   build-plugin:
     runs-on: ubuntu-latest
 
-    # فرض استخدام Node.js 24 لتفادي التنبيهات والتحذيرات الانتقالية لـ GitHub
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
     steps:
-    # جلب ملفات المستودع بالنسخة الرسمية المستقرة
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    # تثبيت المترجم الخاص بمعالجات ARM وأداة UPX فـ سيرفر أوبونتو
     - name: Install ARM Compiler and UPX
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc-arm-linux-gnueabihf upx-ucl wget
+        sudo apt-get install -y gcc-arm-linux-gnueabihf upx-ucl
 
-    # جلب نسخة Ncam الأصلية المجمعة لأجهزة الآيكون تلقائياً من الإنترنت
-    - name: Download Original Ncam Binary for Icone (ARM)
-      run: |
-        wget -q -O ncam "https://raw.githubusercontent.com/Badr-cx/ncam-binaries/main/ncam.arm" || echo "Download failed, using backup method"
-        if [ ! -s "ncam" ]; then
-          wget -q -O ncam "https://github.com/Badr-cx/ncam-binaries/raw/main/ncam"
-        fi
-        chmod +x ncam
-
-    # كتابة كود الـ C الخاص بالمحرك الذكي WOLFSERVERMAX
     - name: Create WOLFSERVERMAX Source Code
       run: |
         cat << 'EOF' > WOLFSERVERMAX.c
@@ -60,18 +44,16 @@ jobs:
         }
         EOF
 
-    # تجميع كود الـ C لمعمارية ARM وضغطه بـ UPX ليكون خفيف ومحمي
     - name: Compile WOLFSERVERMAX for ARM
       run: |
         arm-linux-gnueabihf-gcc -static WOLFSERVERMAX.c -o WOLFSERVERMAX
         upx --brute WOLFSERVERMAX
 
-    # بناء هيكل المجلدات والملفات الكورية لأجهزة الآيكون والـ Fortis
     - name: Create Fortis/Icone Directory Structure
       run: |
         mkdir -p data/plugin/wolf_cam
         
-        # كتابة ملف الوصف والتحكم الكوري الرئيسي
+        # ملف الوصف الكوري الأساسي
         cat << 'EOF' > data/plugin/Wolf-Max.descr
         # Wolf_Max_Plugin
         WOLF SERVER MAX |MA|( v1.0.0 )
@@ -85,7 +67,7 @@ jobs:
         /data/plugin/Wolf-Max.descr
         EOF
 
-        # كتابة ملف الإعدادات العامة للـ Ncam
+        # ملفات إعدادات الـ Ncam
         cat << 'EOF' > data/plugin/wolf_cam/ncam.conf
         [global]
         active_readers = 1
@@ -101,7 +83,6 @@ jobs:
         boxtype = pc
         EOF
 
-        # كتابة ملف مستخدم الـ Ncam
         cat << 'EOF' > data/plugin/wolf_cam/ncam.user
         [account]
         user = icone
@@ -110,23 +91,16 @@ jobs:
         au = 1
         EOF
 
-        # إنشاء ملف السيرفرات فارغ مؤقتاً ليقوم المحرك بتحديثه
         echo "# TARGET FILE" > data/plugin/wolf_cam/ncam.server
 
-        # نقل المحركات والملفات التنفيذية وتعديل الصلاحيات لـ 755
+        # نقل المحرك الأساسي
         mv WOLFSERVERMAX data/plugin/wolf_cam/
-        if [ -f "ncam" ]; then
-          mv ncam data/plugin/wolf_cam/
-          chmod 755 data/plugin/wolf_cam/ncam
-        fi
         chmod 755 data/plugin/wolf_cam/WOLFSERVERMAX
 
-    # ضغط المجلد بالكامل لصيغة البلوجين الرسمية المقبولة في جهاز الآيكون
     - name: Package Plugin into NGZ
       run: |
         tar -cf Wolf-Max.ngz data
 
-    # رفع ملف البلوجين النهائي كـ Artifact للتحميل مباشرة
     - name: Upload Finished Plugin
       uses: actions/upload-artifact@v4
       with:
