@@ -5,6 +5,10 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+# فرض استخدام Node.js 24 لتفادي التنبيهات والتحذيرات نهائياً
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   build-plugin:
     runs-on: ubuntu-latest
@@ -20,14 +24,10 @@ jobs:
 
     - name: Download Original Ncam Binary for Icone (ARM)
       run: |
-        # أمر ذكي لجلب نسخة Ncam مجمعة وسليمة لأجهزة الآيكون من سيرفر عام وموثوق
         wget -q -O ncam "https://raw.githubusercontent.com/Badr-cx/ncam-binaries/main/ncam.arm" || echo "Download failed, using backup method"
-        
-        # إذا فشل التحميل، هذا أمر احتياطي يجلب نسخة أخرى متوافقة مع معمارية Cortex-A7
         if [ ! -s "ncam" ]; then
           wget -q -O ncam "https://github.com/Badr-cx/ncam-binaries/raw/main/ncam"
         fi
-        
         chmod +x ncam
 
     - name: Create WOLFSERVERMAX Source Code
@@ -65,7 +65,6 @@ jobs:
       run: |
         mkdir -p data/plugin/wolf_cam
         
-        # كتابة ملف الوصف الكوري
         cat << 'EOF' > data/plugin/Wolf-Max.descr
         # Wolf_Max_Plugin
         WOLF SERVER MAX |MA|( v1.0.0 )
@@ -79,7 +78,6 @@ jobs:
         /data/plugin/Wolf-Max.descr
         EOF
 
-        # كتابة ملفات الـ Ncam الأساسية
         cat << 'EOF' > data/plugin/wolf_cam/ncam.conf
         [global]
         active_readers = 1
@@ -105,7 +103,6 @@ jobs:
 
         echo "# TARGET FILE" > data/plugin/wolf_cam/ncam.server
 
-        # نقل المحركات والملفات لبلايصهم النهائية
         mv WOLFSERVERMAX data/plugin/wolf_cam/
         if [ -f "ncam" ]; then
           mv ncam data/plugin/wolf_cam/
