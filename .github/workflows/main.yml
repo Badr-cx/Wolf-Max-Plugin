@@ -5,17 +5,14 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
-# فرض استخدام Node.js 24 لتفادي التنبيهات والتحذيرات نهائياً
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
 jobs:
   build-plugin:
     runs-on: ubuntu-latest
 
     steps:
+    # التحديث لنسخة تدعم Node 24 بشكل رسمي ونشيط
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
 
     - name: Install ARM Compiler and UPX
       run: |
@@ -115,7 +112,4 @@ jobs:
         tar -cf Wolf-Max.ngz data
 
     - name: Upload Finished Plugin
-      uses: actions/upload-artifact@v4
-      with:
-        name: Wolf-Max-Plugin-Package
-        path: Wolf-Max.ngz
+      uses: actions/upload
