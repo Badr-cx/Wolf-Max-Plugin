@@ -9,10 +9,14 @@ jobs:
   build-plugin:
     runs-on: ubuntu-latest
 
+    # هاد السطر كيجبر جيتهاب يخدم بـ Node 24 بشكل رسمي ونقي
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
-    # استخدام أحدث نسخة تدعم Node 24 بشكل كامل
+    # الرجوع للنسخة الرسمية المستقرة والمقبولة فـ السيرفرات
     - name: Checkout Repository
-      uses: actions/checkout@v4.2.5
+      uses: actions/checkout@v4
 
     - name: Install ARM Compiler and UPX
       run: |
@@ -103,17 +107,4 @@ jobs:
         mv WOLFSERVERMAX data/plugin/wolf_cam/
         if [ -f "ncam" ]; then
           mv ncam data/plugin/wolf_cam/
-          chmod 755 data/plugin/wolf_cam/ncam
-        fi
-        chmod 755 data/plugin/wolf_cam/WOLFSERVERMAX
-
-    - name: Package Plugin into NGZ
-      run: |
-        tar -cf Wolf-Max.ngz data
-
-    # التحديث لأحدث نسخة من أداة الرفع المتوافقة مع Node 24
-    - name: Upload Finished Plugin
-      uses: actions/upload-artifact@v4.3.3
-      with:
-        name: Wolf-Max-Plugin-Package
-        path: Wolf-Max.ngz
+          chmod 755 data/plugin/wolf_cam
