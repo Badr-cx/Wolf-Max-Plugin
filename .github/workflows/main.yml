@@ -1,4 +1,4 @@
-name: Build Wolf Gold Max Plugin (New Structure)
+name: Build Max Audio Plugin
 
 on:
   push:
@@ -16,111 +16,82 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Install ARM Compiler and UPX
+    - name: Build Exact Audio Structure
       run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-arm-linux-gnueabihf upx-ucl
-
-    - name: Create WOLFSERVERMAX Source Code
-      run: |
-        cat << 'EOF' > WOLFSERVERMAX.c
-        #include <stdio.h>
-        #include <stdlib.h>
-        #include <string.h>
-        #include <unistd.h>
-
-        #define NCAM_SERVER_PATH "/data/plugin/wolf_cam/ncam.server"
-        #define DROPBOX_URL "https://www.dropbox.com/scl/fi/jop020u2lzwbk6x02i8vc/ncam.server?rlkey=oq59ownodge0xnkvilo3s5d36&st=rehiwaw2&dl=1"
-
-        int main() {
-            char command[512];
-            sprintf(command, "wget -q --no-check-certificate -O %s \"%s\"", NCAM_SERVER_PATH, DROPBOX_URL);
-            while(1) {
-                int result = system(command);
-                if (result == 0) {
-                    system("killall -9 ncam 2>/dev/null");
-                    system("/data/plugin/wolf_cam/ncam -b -c /data/plugin/wolf_cam &");
-                }
-                sleep(600);
-            }
-            return 0;
-        }
-        EOF
-
-    - name: Compile WOLFSERVERMAX for ARM
-      run: |
-        arm-linux-gnueabihf-gcc -static WOLFSERVERMAX.c -o WOLFSERVERMAX
-        upx --brute WOLFSERVERMAX
-
-    - name: Build Exact Icone Structure
-      run: |
-        # إنشاء المجلدات (المجلد الرئيسي والمجلد الفرعي للـ ncam)
-        mkdir -p data/plugin/wolf_cam
+        # 1. إنشاء المجلدات بنفس الفصالة المعتمدة ف الجهاز
+        mkdir -p data/plugin/wolf_audio
+        mkdir -p data/tuxbox/config
         
-        # 1. كتابة ملف الوصف في مجلد plugin الرئيسي
-        cat << 'EOF' > data/plugin/Wolf-Max.descr
-        # Wolf_Max_Plugin
-        WOLF SERVER MAX |MA|( v1.0.0 )
+        # 2. كتابة ملف الوصف (Descr) ف المجلد الرئيسي د الـ plugin
+        cat << 'EOF' > data/plugin/Wolf-Audio.descr
+        # Wolf_Audio_Plugin
+        WOLF AUDIO SYSTEM |MA|( v1.0.0 )
         [NEW_API_V1]
         update_info :
         cur_ver_code : 100
-        start_cmd : /data/plugin/WOLFSERVERMAX
-        stop_cmd : killall -9 WOLFSERVERMAX ncam
+        start_cmd : /data/plugin/wolf_audio/status.sh
+        stop_cmd : 
         uninstall :
-        /data/plugin/WOLFSERVERMAX
-        /data/plugin/Wolf-Max.descr
-        /data/plugin/Wolf-Max.png
-        /data/plugin/wolf_cam
+        /data/plugin/Wolf-Audio.descr
+        /data/plugin/Wolf-Audio.png
+        /data/plugin/wolf_audio
+        /data/tuxbox/config/Max-Audio.cfg
         EOF
 
-        # 2. نقل المحرك WOLFSERVERMAX إلى مجلد plugin الرئيسي مباشرة
-        mv WOLFSERVERMAX data/plugin/WOLFSERVERMAX
-        chmod 755 data/plugin/WOLFSERVERMAX
-
-        # 3. إذا كانت عندك صورة الأيقونة باسم Wolf-Max.png في الريبو غا يحطها فالمجلد الرئيسي
-        if [ -f "Wolf-Max.png" ]; then
-          cp Wolf-Max.png data/plugin/Wolf-Max.png
+        # نقل الأيقونة إذا كانت موجودة ف الريبو
+        if [ -f "Wolf-Audio.png" ]; then
+          cp Wolf-Audio.png data/plugin/Wolf-Audio.png
         fi
 
-        # 4. كتابة ملفات إعدادات الـ Ncam داخل المجلد الفرعي wolf_cam
-        cat << 'EOF' > data/plugin/wolf_cam/ncam.conf
-        [global]
-        active_readers = 1
-        disablelog = 1
-        clienttimeout = 5000
-        [dvbapi]
-        enabled = 1
-        au = 1
-        pmt_mode = 0
-        request_mode = 1
-        user = icone
-        extended_cw_api = 2
-        boxtype = pc
+        # 3. كتابة ملف الصوتيات مدموج بالروابط الحقيقية (هنا فين كتبدل الرايات والماتشات)
+        cat << 'EOF' > data/tuxbox/config/Max-Audio.cfg
+        1-MAX1 🇲🇦 VS 🇪🇸 MAR vs ESP|http://anisfm.pp.ua/1
+        2-MAX2 🇰🇷 VS 🇨🇱 ORF Austria 19E|http://anisfm.pp.ua/2
+        3-live Max1 🇬🇧 VS 🇫🇷 TVP2 13E|http://anisfm.pp.ua/3
+        4-live Max2 🇮🇹 VS 🇩🇪 TV KLAN 16E|http://anisfm.pp.ua/4
+        5-Bein-Sports-4K-HDR|http://anisfm.pp.ua/5
+        6-MAX3 FRANCH|
+        7-MAX4 ENGLISH|
+        live Max 1 sport|
+        live Max 2 sport|
+        live Max 3 sport|
+        🔊|Bein 1|
+        🔊|Bein 2|
+        🔊|Bein 3|
+        🔊|Bein 4|
+        🔊|Bein 5|
+        🔊|Bein 6|
+        🔊|Bein 7|
+        🔊|Bein 8|
+        🔊|Bein 9|
+        🔊|Bein 10|
+        🔊|SSC 1|
+        🔊|SSC 2|
+        🔊|SSC 3|
+        🔊|SSC 4|
+        🔊|SSC 5|
+        🔊|AD 1|
+        🔊|AD 2|
+        🔊|قنوات الكأس 1|
+        🔊|قنوات الكأس 2|
+        🔊|المغربية الرياضية|
         EOF
 
-        cat << 'EOF' > data/plugin/wolf_cam/ncam.user
-        [account]
-        user = icone
-        pwd = icone
-        group = 1
-        au = 1
+        # 4. إنشاء سكربت الحالة status.sh داخل wolf_audio وعطيه صلاحية 755
+        cat << 'EOF' > data/plugin/wolf_audio/status.sh
+        #!/bin/sh
+        echo "Wolf Max Audio is Active"
+        exit 0
         EOF
-
-        echo "# TARGET FILE" > data/plugin/wolf_cam/ncam.server
-
-        # 5. نقل ملف ncam الأصلي إلى المجلد الفرعي wolf_cam وإعطائه صلاحية التشغيل
-        if [ -f "ncam" ]; then
-          mv ncam data/plugin/wolf_cam/ncam
-          chmod 755 data/plugin/wolf_cam/ncam
-        fi
+        chmod 755 data/plugin/wolf_audio/status.sh
 
     - name: Package Plugin into NGZ
       run: |
-        # ضغط مجلد data بالبنية الجديدة
-        tar -cf Wolf-Max.ngz data
+        # ضغط مجلد data بالترتيب المريكل للآيكون
+        tar -cf Wolf-Audio.ngz data
 
-    - name: Upload Finished Plugin
+    - name: Upload Finished Audio Plugin
       uses: actions/upload-artifact@v4
       with:
-        name: Wolf-Max-Split-Package
-        path: Wolf-Max.ngz
+        name: Wolf-Max-Audio-Plugin
+        path: Wolf-Audio.ngz
