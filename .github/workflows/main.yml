@@ -1,4 +1,4 @@
-name: Build Max Audio Plugin
+name: Build Wolf Audio Importer
 
 on:
   push:
@@ -16,82 +16,119 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Build Exact Audio Structure
+    - name: Build Importer Structure
       run: |
-        # 1. إنشاء المجلدات بنفس الفصالة المعتمدة ف الجهاز
-        mkdir -p data/plugin/wolf_audio
+        # 1. إنشاء المجلدات الرسمية للبلوجين
+        mkdir -p data/plugin/wolf_import
         mkdir -p data/tuxbox/config
-        
-        # 2. كتابة ملف الوصف (Descr) ف المجلد الرئيسي د الـ plugin
-        cat << 'EOF' > data/plugin/Wolf-Audio.descr
-        # Wolf_Audio_Plugin
-        WOLF AUDIO SYSTEM |MA|( v1.0.0 )
+
+        # 2. إنشاء ملف الوصف (.descr) المعتمد ف الـ Wegoo
+        cat << 'EOF' > data/plugin/Wolf-Import.descr
+        # Wolf_Audio_Import
+        WOLF AUDIO IMPORTER |MA|( v1.0.0 )
         [NEW_API_V1]
         update_info :
         cur_ver_code : 100
-        start_cmd : /data/plugin/wolf_audio/status.sh
+        start_cmd : /data/plugin/wolf_import/import_audio.sh
         stop_cmd : 
         uninstall :
-        /data/plugin/Wolf-Audio.descr
-        /data/plugin/Wolf-Audio.png
-        /data/plugin/wolf_audio
-        /data/tuxbox/config/Max-Audio.cfg
+        /data/plugin/Wolf-Import.descr
+        /data/plugin/Wolf-Import.png
+        /data/plugin/wolf_import
         EOF
 
-        # نقل الأيقونة إذا كانت موجودة ف الريبو
-        if [ -f "Wolf-Audio.png" ]; then
-          cp Wolf-Audio.png data/plugin/Wolf-Audio.png
+        # 3. كتابة سكربت الاستيراد الفعلي (import_audio.sh) مع لوغو الذئب الشاشي
+        cat << 'EOF' > data/plugin/wolf_import/import_audio.sh
+        #!/bin/sh
+
+        TARGET_DIR="/data/tuxbox/config"
+        TARGET_FILE="$TARGET_DIR/Max-Audio.cfg"
+        mkdir -p "$TARGET_DIR"
+
+        clear
+        echo "======================================================"
+        echo "   __      __        _  __   __  __                         "
+        echo "   \ \    / /       | |/ _| |  \/  |                        "
+        echo "    \ \  / /__  ___ | | |_  | \  / | __ _ _ __ ___   ___    "
+        echo "     \ \/ / _ \/ _ \| |  _| | |\/| |/ _\` | '__/ _ \ / __|   "
+        echo "      \  / (_)  (_) | | |   | |  | | (_| | | | (_) | (__    "
+        echo "       \/ \___/\___/|_|_|   |_|  |_|\__,_|_|  \___/ \___|   "
+        echo "======================================================"
+        echo "          WOLF MAROC - USB AUDIO IMPORTER             "
+        echo "======================================================"
+        echo " Scanning USB ports for Audio files...               "
+        echo "------------------------------------------------------"
+
+        # البحث عن ملفات الصوتيات فقط (.cfg أو .m3u) داخل الـ USB
+        INDEX=1
+        for usb in /mnt/usb1 /mnt/usb2; do
+            if [ -d "$usb" ]; then
+                for f in "$usb"/*Max-Audio*.cfg "$usb"/*audio*.cfg "$usb"/*.m3u "$usb"/*.cfg; do
+                    if [ -f "$f" ]; then
+                        # استثناء ملفات ncam باش نركزو غير على الصوتيات
+                        if echo "$f" | grep -q "ncam"; then
+                            continue
+                        fi
+                        
+                        eval "FILE_$INDEX=\"$f\""
+                        echo " [$INDEX] -> \$(basename "$f") (منفذ \$(basename "$usb"))"
+                        INDEX=\$((INDEX + 1))
+                    fi
+                done
+            fi
+        done
+
+        # إذا لم يجد أي ملف
+        if [ \$INDEX -eq 1 ]; then
+            echo "❌ No Audio config files found on USB!"
+            echo " Please put your Max-Audio.cfg or .m3u files in USB root."
+            echo "======================================================"
+            sleep 4
+            exit 0
         fi
 
-        # 3. كتابة ملف الصوتيات مدموج بالروابط الحقيقية (هنا فين كتبدل الرايات والماتشات)
-        cat << 'EOF' > data/tuxbox/config/Max-Audio.cfg
-        1-MAX1 🇲🇦 VS 🇪🇸 MAR vs ESP|http://anisfm.pp.ua/1
-        2-MAX2 🇰🇷 VS 🇨🇱 ORF Austria 19E|http://anisfm.pp.ua/2
-        3-live Max1 🇬🇧 VS 🇫🇷 TVP2 13E|http://anisfm.pp.ua/3
-        4-live Max2 🇮🇹 VS 🇩🇪 TV KLAN 16E|http://anisfm.pp.ua/4
-        5-Bein-Sports-4K-HDR|http://anisfm.pp.ua/5
-        6-MAX3 FRANCH|
-        7-MAX4 ENGLISH|
-        live Max 1 sport|
-        live Max 2 sport|
-        live Max 3 sport|
-        🔊|Bein 1|
-        🔊|Bein 2|
-        🔊|Bein 3|
-        🔊|Bein 4|
-        🔊|Bein 5|
-        🔊|Bein 6|
-        🔊|Bein 7|
-        🔊|Bein 8|
-        🔊|Bein 9|
-        🔊|Bein 10|
-        🔊|SSC 1|
-        🔊|SSC 2|
-        🔊|SSC 3|
-        🔊|SSC 4|
-        🔊|SSC 5|
-        🔊|AD 1|
-        🔊|AD 2|
-        🔊|قنوات الكأس 1|
-        🔊|قنوات الكأس 2|
-        🔊|المغربية الرياضية|
-        EOF
+        echo " [0] -> Exit Menu"
+        echo "------------------------------------------------------"
+        echo -n "Select the audio file to import [0-\$((INDEX - 1))]: "
 
-        # 4. إنشاء سكربت الحالة status.sh داخل wolf_audio وعطيه صلاحية 755
-        cat << 'EOF' > data/plugin/wolf_audio/status.sh
-        #!/bin/sh
-        echo "Wolf Max Audio is Active"
+        # قراءة الاختيار من الريموت
+        read choice
+
+        if [ "\$choice" -eq 0 ] 2>/dev/null; then
+            echo "Exiting..."
+            exit 0
+        fi
+
+        # تنفيذ عملية النسخ والتثبيت ف السيستم
+        if [ "\$choice" -lt \$INDEX ] 2>/dev/null && [ "\$choice" -gt 0 ] 2>/dev/null; then
+            eval "SELECTED_FILE=\$FILE_\$choice"
+            
+            echo "Importing: \$(basename "\$SELECTED_FILE")..."
+            
+            cp "\$SELECTED_FILE" "\$TARGET_FILE"
+            chmod 644 "\$TARGET_FILE"
+            
+            echo "------------------------------------------------------"
+            echo "✅ Success! Audio tracks updated on Wolf-System."
+            echo "------------------------------------------------------"
+        else
+            echo "❌ Invalid choice!"
+        fi
+
+        sleep 3
         exit 0
         EOF
-        chmod 755 data/plugin/wolf_audio/status.sh
+
+        # 4. إعطاء الصلاحيات الكاملة لسكربت التشغيل
+        chmod 755 data/plugin/wolf_import/import_audio.sh
 
     - name: Package Plugin into NGZ
       run: |
-        # ضغط مجلد data بالترتيب المريكل للآيكون
-        tar -cf Wolf-Audio.ngz data
+        # ضغط مجلد البلوجين للفورما اللي كيفهمها الآيكون ويتبثها
+        tar -cf Wolf-Import.ngz data
 
-    - name: Upload Finished Audio Plugin
+    - name: Upload Finished Importer Plugin
       uses: actions/upload-artifact@v4
       with:
-        name: Wolf-Max-Audio-Plugin
-        path: Wolf-Audio.ngz
+        name: Wolf-Audio-Importer
+        path: Wolf-Import.ngz
