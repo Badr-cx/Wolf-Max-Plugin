@@ -6,20 +6,29 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Extract Files
+      - name: Extract and Locate Files
         run: |
-          # هاد السطر كياخد الملف اللي عندك في image_f38fec.png وكيخرج منو المجلدات
           tar -xvf WolfAudio-Plugin.tar
+          echo "Listing all directories to find 'data':"
+          find . -type d -name "data"
           
       - name: Packaging
         run: |
-          # دابا المجلد data خاصو يكون بان دابا بعد الفك
-          if [ -d "data" ]; then
-            sudo chown -R 0:0 data/
-            sudo chmod -R 755 data/
-            sudo tar --owner=0 --group=0 -cvzf "WolfAudio.ngz" data/
+          # هاد السطر غادي يلقى المسار الحقيقي ديال المجلد
+          DATA_PATH=$(find . -type d -name "data" | head -n 1)
+          
+          if [ -d "$DATA_PATH" ]; then
+            echo "Found data directory at: $DATA_PATH"
+            # هنا كنطبقو الصلاحيات على المسار اللي لقيناه
+            sudo chown -R 0:0 "$DATA_PATH"
+            sudo chmod -R 755 "$DATA_PATH"
+            
+            # كنضغطو المجلد الأب ديال data باش يخرج لينا ngz صحيح
+            # كنطلعو لمستوى واحد فوق data باش نضمنو الهيكلة صحيحة
+            PARENT_DIR=$(dirname "$DATA_PATH")
+            sudo tar --owner=0 --group=0 -cvzf "WolfAudio.ngz" -C "$PARENT_DIR" data
           else
-            echo "Error: 'data' directory still not found after extraction!"
+            echo "Error: 'data' directory not found even after searching!"
             exit 1
           fi
 
