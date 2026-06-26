@@ -6,22 +6,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Debug and List Files
+      - name: Extract Files
         run: |
-          echo "Current directory files:"
-          ls -R
+          # هاد السطر كياخد الملف اللي عندك في image_f38fec.png وكيخرج منو المجلدات
+          tar -xvf WolfAudio-Plugin.tar
           
       - name: Packaging
         run: |
-          # هاد السطر كيقلب على المجلد اللي فيه plugin.xml باش يضمن أننا في المكان الصحيح
+          # دابا المجلد data خاصو يكون بان دابا بعد الفك
           if [ -d "data" ]; then
-            echo "Data directory found."
             sudo chown -R 0:0 data/
             sudo chmod -R 755 data/
             sudo tar --owner=0 --group=0 -cvzf "WolfAudio.ngz" data/
           else
-            echo "Error: 'data' directory not found at the root!"
-            # هاد السطر كيعاوننا نعرفو فين كاين الملف بالضبط إذا كان وسط شي مجلد آخر
+            echo "Error: 'data' directory still not found after extraction!"
             exit 1
           fi
 
