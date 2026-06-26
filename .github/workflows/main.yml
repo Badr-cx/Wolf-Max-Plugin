@@ -1,17 +1,19 @@
-name: Build WolfAudio
+name: Build WolfAudio Plugin
 on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Build
+      - name: Packaging
         run: |
+          # هاد الكود هو اللي كينظم الصلاحيات 0000777 اللي كاينين في ملفك
           sudo chown -R 0:0 data/
           sudo chmod -R 755 data/
+          # عملية الضغط الصحيحة لجهاز Icone
           sudo tar --owner=0 --group=0 -cvzf "WolfAudio.ngz" data/
-      - name: Upload
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: WolfAudio-Plugin
+          name: WolfAudio-Package
           path: ./WolfAudio.ngz
